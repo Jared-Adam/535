@@ -1,1 +1,98 @@
+#reminders for figures: make use of all space!! empty/ white space must be utilized effectively. clutter is not clear. only 'box' things in when a box makes sense (e.g., NMDS)
 
+###
+gganimate: 
+plot1 <- ggplot(df, aes(x = total_predators, y= pred.prop, color = factor(trt, 
+                       labels = c("Control","Green","Brown","GR-BR"))), #labeling these 
+color = "black", pch=21, size = 5)+
+  geom_point(size = 6)+ #point size
+  scale_color_brewer(palette = "Dark2")+ #color palette of choice with brewer package 
+  ylim(.5,1)+ #limits of the y-axis
+  labs(x = "Total Predators",
+       y = "Proportion Predated x/6")+
+       # title = "{frame_time}")+ 
+  labs(title = "(Proportion Predated x Total Predators) x Time", caption = 'Timing: {frame_time}',shape = "Timing", color = "Treatment")+
+  transition_time(timing)+ #here comes gganmiate code
+  ease_aes('linear')+ #anonther line for gganimate 
+  theme(
+    plot.caption = element_text(hjust = .95, vjust= 15, size = 45, 
+                                color = "darkgray", face = "bold"), #i wanted a caption to actively display time change, so i did it 
+    axis.line.x = element_line(color = 'black', linewidth =0.75, linetype='solid'),#adding the x and y axis lines 
+    axis.line.y = element_line(color = 'black', linewidth =0.75, linetype='solid'),
+    axis.ticks = element_line(linewidth = 1),
+    axis.text.x = element_text(size = 15),
+    axis.text.y = element_text(size = 15),
+    axis.title = element_text(size = 20),
+    legend.title = element_text(size=15),
+    legend.text = element_text(size=15),
+    title = element_text(size = 15)
+    )
+    ###
+    
+    
+    ###
+    sentinel prey: 
+    ggplot(df, aes(x = treatment, y = prob))+
+  geom_point(aes(x = treatment, y = prob), size = 3,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0, size = 1.5)+
+  geom_errorbar(aes(x = treatment,ymin = lower.CL, ymax = upper.CL), #building error bars based on emmeans outputs 
+                color = "black", alpha = 1, width = 0, size = 0.5)+
+  facet_grid(~factor(stage, levels = c('v3','v5','r3')))+ #this is how you get each timing into its own 'box' 
+  theme_bw()+
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank())+
+  ggtitle("OVERALL")+
+  theme(plot.title = element_text(size=10))+ #theme here works best with ggtitle, rather than labs()
+  ylab("Predation probability")+
+  xlab("")+
+  scale_y_continuous(limits = c(0,1.1), breaks = c(0.25,0.5,0.75,1))+ #choosing my y-axis breaks 
+  theme(axis.text.y=element_text(size=16),
+        axis.text.x=element_text(size=15, angle=45, hjust = 1))+
+  theme(strip.text.x = element_text(size = 10))+
+  theme(text = element_text(size=18))+
+  theme(axis.title.y=element_text(angle=90, vjust=4))+ #text angle
+  theme(axis.title.x=element_text(vjust=-4))+
+  theme(plot.margin = unit(c(1,1,1,1), "cm"))+
+  scale_x_discrete(labels=c("1" = "Control", "2" = "Brown", "3" = "Green", "4" = "GR-BR")) #changing the numbers to names, "what is was" = "what I want it to say"
+  ###
+  
+  ###
+ PF: #pulled this code out of a for-loop, hence print()
+  print(ggplot(df, aes(x=trt,y=column, fill=timing))+
+          geom_bar(aes(x=trt,y=log(column+1), fill=timing),stat = "identity",position="dodge"))+
+    labs(x= "Treatment", y="Abundance log(x+1)", title = "Lycosidae: Abundance x timing*treatment")+
+    scale_fill_brewer(palette = "Dark2", labels=c("V3", "V5", "R3"),name = "Timing")+
+    scale_x_discrete(limit=c("Control", "Brown", "Green", "GR-BR"))
+    ###
+    
+  ###
+  NMDS: 
+  ggplot()+
+  geom_polygon(data=df, aes(x=NMDS1, y=NMDS2, group=timing,fill = timing),alpha=0.3)+ #adding the convex of the hulls
+  scale_fill_manual(values = c("red","black","blue"))+
+  geom_segment(data = species.scores, aes(x=0, xend=NMDS1,y=0, yend=NMDS2), arrow =arrow(length = unit(0.25, "cm")),
+               color = "grey10", lwd=0.3)+ #ading arrows to show species cxns with time
+  ggrepel::geom_text_repel(data = species.scores, aes(x=NMDS1, y=NMDS2, label = species),cex = 5, direction ="both", #package:: ensures the fxn i want to use is from the package I want. can get hairy with a lot packages with similar syntax 
+                           segment.size =0.25)+ #this allows me to get rid of geom_text for species names 
+  # geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), alpha=0.5)+ #this is adding species label at size=0.5
+  # geom_point(data=scrs.new, aes(x=NMDS1, y=NMDS2, shape=Treatment, color=Treatment),size=3)+ #add point markers by trt
+  # scale_color_manual(values=c("1" = "red", "2" = "blue", "3" = "green","4" = "black"))+ #I fuck with these colors here. NMDS gives hues instead of solids 
+  annotate(geom = "text", x=1.5, y=2.2, label ="Stress: 0.162")+ #x and y here are positions, not sizes. I am moving the stress level to the top corner. NEED stress with NMDS
+  coord_equal()+
+  theme_bw()+
+  labs(fill="Timing")+ #filling polygons by timing 
+  labs(title = "Predator abundance by timing")+
+  theme(axis.text.x = element_blank(),  # remove x-axis text 
+        axis.text.y = element_blank(), # remove y-axis text
+        axis.ticks = element_blank(),  # remove axis ticks
+        axis.title.x = element_text(size=18), # remove x-axis labels
+        axis.title.y = element_text(size=18), # remove y-axis labels
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),  #remove major-grid labels
+        panel.grid.minor = element_blank(),  #remove minor-grid labels
+        plot.background = element_blank())
+  ####
